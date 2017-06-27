@@ -16,11 +16,11 @@ object Hangerman extends App {
 	private var listOfWords: mutable.MutableList[String] = mutable.MutableList()
 	private var wordAmount: Int = 0
 	private var randomWordSelected: String = ""
-	private var randomWordSelectedChars: Array[Char] = Array[Char]()
+	private var randomWordSelectedChars: Array[String] = Array[String]()
 	private var randomWordSelectedLength: Int = 0
 	private var loseCounter: Int = 0
 	private var game: Boolean = true
-	private var hiddenWord:Array[Char] = Array[Char]()
+	private var hiddenWord:Array[String] = Array[String]()
 //	private var wordMaps = scala.collection.mutable.Map[Int, Boolean]()
 
 	def applyTheWords(): Unit = {
@@ -36,8 +36,8 @@ object Hangerman extends App {
 		val randomValueSelected = randomValue.randomInt
 		randomWordSelected = listOfWords(randomValueSelected)
 		randomWordSelectedLength = randomWordSelected.length
-		randomWordSelectedChars = randomWordSelected.toCharArray
-		hiddenWord = ("_" * randomWordSelectedLength).toCharArray
+		randomWordSelectedChars = randomWordSelected.split("")
+		hiddenWord = ("_" * randomWordSelectedLength).
 		println(wordAmount + " here be the selected word \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
 
 	}
@@ -105,9 +105,13 @@ object Hangerman extends App {
 		}
 	}
 	def hiddenToShownWord(char:Char):Unit ={
-		//"hello".replace() use this
-		hiddenWord(randomWordSelectedChars.indexWhere(chara=> chara ==char)) = char
-		randomWordSelectedChars(randomWordSelected.indexWhere(chara=> chara == char)) ='_'
+
+		(randomWordSelectedChars.indexWhere(chara=> chara ==char)) = char
+		randomWordSelectedChars(randomWordSelected.indexWhere(chara=> chara == char)) = "_"
+
+		randomWordSelected map(case char =>)
+
+		randomWordSelected.replace(char:Char , '_':Char)
 		if (randomWordSelectedChars.contains(char)){ hiddenToShownWord(char)}
 		else
 			println(hiddenWord)
