@@ -37,7 +37,7 @@ object Hangerman extends App {
 		randomWordSelected = listOfWords(randomValueSelected)
 		randomWordSelectedLength = randomWordSelected.length
 		randomWordSelectedChars = randomWordSelected.split("")
-		hiddenWord = ("_" * randomWordSelectedLength).
+		for(i<- 0 until(hiddenWord.length)){hiddenWord(i)= "_"}
 		println(wordAmount + " here be the selected word \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
 
 	}
