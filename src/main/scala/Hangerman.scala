@@ -6,16 +6,22 @@ import scala.io.Source
 
 
 object Hangerman extends App {
-	val url = "jdbc:mysql://localhost:3306/scalafun"
-	val driver = "com.mysql.jdbc.Driver"
-	val username = "root"
-	val password = "password"
-	val tableDrop = "DROP TABLE IF EXISTS hangman_data"
-	val createTable = "CREATE TABLE hangman_data (id int auto_increment primary key, word varchar(64) NOT NULL)"
-	var connection: Connection = _
-	var listOfWords: mutable.MutableList[String] = mutable.MutableList()
-	var wordAmount: Int = 0
-	var randomWordSelected :String = ""
+	private val url = "jdbc:mysql://localhost:3306/scalafun"
+	private val driver = "com.mysql.jdbc.Driver"
+	private val username = "root"
+	private val password = "password"
+	private val tableDrop = "DROP TABLE IF EXISTS hangman_data"
+	private val createTable = "CREATE TABLE hangman_data (id int auto_increment primary key, word varchar(64) NOT NULL)"
+	private var connection: Connection = _
+	private var listOfWords: mutable.MutableList[String] = mutable.MutableList()
+	private var wordAmount: Int = 0
+	private var randomWordSelected: String = ""
+	private var randomWordSelectedChars: Array[Char] = Array[Char]()
+	private var randomWordSelectedLength: Int = 0
+	private var loseCounter: Int = 0
+	private var game: Boolean = true
+	private var hiddenWord:Array[Char] = Array[Char]()
+//	private var wordMaps = scala.collection.mutable.Map[Int, Boolean]()
 
 	def applyTheWords(): Unit = {
 		var counter = 0
@@ -24,9 +30,16 @@ object Hangerman extends App {
 			listOfWords += line
 		}
 		wordAmount = listOfWords.length
-		val randomValueSelected= randomValue.randomInt
+	}
+
+	def wordSelection(): Unit = {
+		val randomValueSelected = randomValue.randomInt
 		randomWordSelected = listOfWords(randomValueSelected)
-		println(wordAmount + " here be the random number " + randomWordSelected + " "+ randomValueSelected)
+		randomWordSelectedLength = randomWordSelected.length
+		randomWordSelectedChars = randomWordSelected.toCharArray
+		hiddenWord = ("_" * randomWordSelectedLength).toCharArray
+		println(wordAmount + " here be the selected word \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
+
 	}
 
 	def showMeTheHangman(): Unit = {
@@ -39,11 +52,11 @@ object Hangerman extends App {
 		try {
 			Class.forName(driver)
 			connection = DriverManager.getConnection(url, username, password)
-
 			val statement = connection.createStatement()
 			statement.executeUpdate(tableDrop) //drops any existing tables off the building
 			statement.executeUpdate(createTable) // builds table
 			for (i <- 0 until wordAmount) {
+				if (i % 250 == 0) println(wordAmount - i + " to go, please wait...")
 				//			val resultSets = statement.executeUpdate("INSERT INTO hangman_data VALUES (1,'newWord')")
 				//			val resultSets = statement.executeQuery("SELECT * FROM hangman_data")
 				//			val resultSets = statement.executeUpdate("INSERT INTO hangman_data VALUES("+(i+1)+",'" + listOfWords(i) +"')")
@@ -51,15 +64,92 @@ object Hangerman extends App {
 			}
 			//			while (resultSets.next) {println(resultSets.getString("word"))}
 		} catch {
-			case e: Exception => println("You goofed! No stack trace for you." + e.printStackTrace())
-				connection.rollback()
+			case e: Exception => println("Something went wrong!" + e.printStackTrace())
+			//connection.rollback()
 		}
 		connection.close()
 	}
 
-	applyTheWords()
-	applyTheSQL()
-	println("No problems here.")
+	def applyWordFromSQL(): Unit = {
+		Class.forName(driver)
+		connection = DriverManager.getConnection(url, username, password)
+		val statement = connection.createStatement()
+		var resultsSets = statement.executeQuery("SELECT COUNT(*)AS totalrows FROM hangman_data")
+		resultsSets.next()
+		wordAmount = resultsSets.getInt("totalrows")
+
+		val randomValueSelected = randomValue.randomInt
+		resultsSets = statement.executeQuery("SELECT word FROM hangman_data WHERE id=" + randomValueSelected)
+		resultsSets.next()
+		randomWordSelected = resultsSets.getString("word")
+		randomWordSelectedLength = randomWordSelected.length
+		randomWordSelectedChars = randomWordSelected.toCharArray
+		hiddenWord = ("_" * randomWordSelectedLength).toCharArray
+		println("There are " + wordAmount + " words in the list, the selected word is \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
+
+		connection.close()
+	}
+
+	def processTheCharEntered(char: Char): Unit = {
+		char match {
+			case _ if randomWordSelected.contains(char) => println("you live")
+				hiddenToShownWord(char)
+				if (randomWordSelectedChars.count(_ == "_") == randomWordSelectedLength) {game =true
+				print("You win!")}
+			case _ => loseCounter += 1
+				if (loseCounter > 10) {
+					println("you lose")
+					showMeTheHangman()
+					game = false
+				}
+		}
+	}
+	def hiddenToShownWord(char:Char):Unit ={
+		//"hello".replace() use this
+		hiddenWord(randomWordSelectedChars.indexWhere(chara=> chara ==char)) = char
+		randomWordSelectedChars(randomWordSelected.indexWhere(chara=> chara == char)) ='_'
+		if (randomWordSelectedChars.contains(char)){ hiddenToShownWord(char)}
+		else
+			println(hiddenWord)
+	}
+
+	def theActualIntroGame(): Unit = { // Not need for testing
+		print("The game is being prepared! Please enter go to run with text or type sql for running with sql database:")
+		loseCounter = 0
+		game = true
+		var scanner = scala.io.StdIn.readLine()
+		scanner match {
+			case "go" => println("Boogie Time!")
+				applyTheWords()
+				wordSelection()
+
+			case "sql" => println("SQL Time!")
+				println("Is the data for the words existing? y\\n?")
+				scanner = scala.io.StdIn.readLine()
+				if (scanner == "y") applyWordFromSQL()
+				else {
+					applyTheWords()
+					applyTheSQL()
+					applyWordFromSQL()
+				}
+
+			case _ => sys.exit()
+		}
+	}
+
+	def theActualGame(): Unit = {
+		while (game) {
+			println(hiddenWord)
+			print("Game is on! Please enter a character! :")
+			var scanner = scala.io.StdIn.readLine()
+			processTheCharEntered(scanner.charAt(0))
+		}
+	}
+
+	theActualIntroGame()
+	theActualGame()
+
+	println("All done, no problems here.")
 
 	object randomValue {
 		private val random = scala.util.Random

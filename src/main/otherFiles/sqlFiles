@@ -1,0 +1,21 @@
+DROP TABLE IF EXISTS hangman_data;
+create table hangman_data
+(
+	id int auto_increment
+		primary key,
+	word varchar(64) NOT NULL
+)
+;
+
+DROP TABLE IF EXISTS hangman_words;
+create table hangman_words
+(
+	id int auto_increment
+		primary key,
+	word varchar(64) NOT NULL
+);
+
+#  LOADS TXT TO DATABASE
+LOAD DATA LOCAL INFILE'C:\\Users\\Administrator\\IdeaProjects\\Hanger\\src\\main\\otherFiles\\allWords.txt'
+INTO TABLE hangman_words (@col) SET word =@col;
+
