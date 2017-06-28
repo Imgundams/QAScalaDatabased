@@ -83,8 +83,8 @@ object Hangerman extends App {
 		resultsSets.next()
 		randomWordSelected = resultsSets.getString("word")
 		randomWordSelectedLength = randomWordSelected.length
-		randomWordSelectedChars = randomWordSelected.toCharArray
-		hiddenWord = ("_" * randomWordSelectedLength).toCharArray
+		randomWordSelectedChars = randomWordSelected.split("")
+		for(i<- 0 until(hiddenWord.length)){hiddenWord(i)= "_"}
 		println("There are " + wordAmount + " words in the list, the selected word is \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
 
 		connection.close()
@@ -106,11 +106,8 @@ object Hangerman extends App {
 	}
 	def hiddenToShownWord(char:Char):Unit ={
 
-		(randomWordSelectedChars.indexWhere(chara=> chara ==char)) = char
+		randomWordSelectedChars(randomWordSelectedChars.indexWhere(chara => chara == char.toString)) = char.toString
 		randomWordSelectedChars(randomWordSelected.indexWhere(chara=> chara == char)) = "_"
-
-		randomWordSelected map(case char =>)
-
 		randomWordSelected.replace(char:Char , '_':Char)
 		if (randomWordSelectedChars.contains(char)){ hiddenToShownWord(char)}
 		else
