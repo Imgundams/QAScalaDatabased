@@ -1,10 +1,9 @@
 
 import java.sql.{Connection, DriverManager}
 
-import scala.io.Source
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-
+import scala.io.Source
 
 
 object Hangerman extends App {
@@ -21,12 +20,13 @@ object Hangerman extends App {
 	private var randomWordSelectedLength: Int = 0
 	private var loseCounter: Int = 0
 	private var game: Boolean = true
-	private var hiddenWord= ArrayBuffer[String]()
-	private var hiddenWordhidden= ArrayBuffer[String]()
+	private var hiddenWord = ArrayBuffer[String]()
+	private var hiddenWordhidden = ArrayBuffer[String]()
+	private var usedWords = ArrayBuffer[String]()
 
 	def applyTheWords(): Unit = {
-		var counter = 0
-		val filename = "C:\\Users\\Administrator\\IdeaProjects\\Hanger\\src\\main\\otherFiles\\someWords.txt" // or allWords take too long
+		loseCounter = 0
+		val filename = "C:\\Users\\Administrator\\IdeaProjects\\Hanger\\src\\main\\otherFiles\\allWords.txt" // or allWords take too long
 		for (line <- Source.fromFile(filename).getLines) {
 			listOfWords += line
 		}
@@ -44,8 +44,19 @@ object Hangerman extends App {
 	}
 
 	def showMeTheHangman(): Unit = {
-		println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |")
-		println("          |      / \\\n          |\n       ___|___  _____")
+		loseCounter match {
+			case 0 => println("\n\n\n\n\n\n\n       _______")
+			case 1 => println("\n\n\n\n\n\n\n       ___|___")
+			case 2 => println("\n\n\n\n\n          |\n          |\n       ___|___")
+			case 3 => println("\n\n\n\n          |\n          |\n          |\n       ___|___")
+			case 4 => println("           _______\n          |/\n          |\n          |\n          |\n          |       \n          | \n       ___|___")
+			case 5 => println("           _______\n          |/\n          |\n          |\n          |\n          |\n          |\n       ___|___ ")
+			case 6 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
+			case 7 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
+			case 8 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
+				case _ => println("Better luck next time.")
+				sys.exit(1)
+		}
 	}
 
 	def applyTheSQL(): Unit = {
@@ -95,18 +106,23 @@ object Hangerman extends App {
 		char match {
 			case _ if randomWordSelected.contains(char) => println("you live")
 				hiddenToShownWord(char)
-				if (!hiddenWordhidden.contains("_")) {game =false
-				print("You win!")}
+				if (!hiddenWordhidden.contains("_")) {
+					game = false
+					print("You win! The correct word was indeed \""+randomWordSelected+"\".")
+				}
 			case _ => loseCounter += 1
-				if (loseCounter > 10) {
-					println("you lose")
+				if (loseCounter > 8) {
+					println("You lose, you get nothing! The word was \""+ randomWordSelected +"\".")
 					showMeTheHangman()
 					game = false
 				}
 		}
 	}
-	def hiddenToShownWord(char:Char):Unit ={
-		for(i<-0 until(hiddenWord.length)){ if(hiddenWord(i)== char.toString) hiddenWordhidden(i)=char.toString}
+
+	def hiddenToShownWord(char: Char): Unit = {
+		for (i <- hiddenWord.indices) {
+			if (hiddenWord(i) == char.toString) hiddenWordhidden(i) = char.toString
+		}
 	}
 
 	def theActualIntroGame(): Unit = { // Not need for testing
@@ -135,10 +151,12 @@ object Hangerman extends App {
 
 	def theActualGame(): Unit = {
 		while (game) {
+			showMeTheHangman()
 			println(hiddenWordhidden.mkString(" "))
-			print("Game is on! Please enter a character! :")
-			var scanner = scala.io.StdIn.readLine()
-			processTheCharEntered(scanner.charAt(0))
+			print("Game is on!\nWords entered so far are "+usedWords.mkString(", ")+"\nPlease enter a character! :")
+			var scanner = scala.io.StdIn.readLine().charAt(0)
+			if (!usedWords.contains(scanner.toString))usedWords += scanner.toString
+			processTheCharEntered(scanner)
 		}
 	}
 
