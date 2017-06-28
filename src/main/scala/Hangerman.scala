@@ -51,11 +51,10 @@ object Hangerman extends App {
 			case 3 => println("\n\n\n\n          |\n          |\n          |\n       ___|___")
 			case 4 => println("           _______\n          |/\n          |\n          |\n          |\n          |       \n          | \n       ___|___")
 			case 5 => println("           _______\n          |/\n          |\n          |\n          |\n          |\n          |\n       ___|___ ")
-			case 6 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
+			case 6 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      \n          |\n       ___|___")
 			case 7 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
 			case 8 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
-				case _ => println("Better luck next time.")
-				sys.exit(1)
+			case _ => println("Better luck next time.")
 		}
 	}
 
@@ -102,23 +101,6 @@ object Hangerman extends App {
 		connection.close()
 	}
 
-	def processTheCharEntered(char: Char): Unit = {
-		char match {
-			case _ if randomWordSelected.contains(char) => println("you live")
-				hiddenToShownWord(char)
-				if (!hiddenWordhidden.contains("_")) {
-					game = false
-					print("You win! The correct word was indeed \""+randomWordSelected+"\".")
-				}
-			case _ => loseCounter += 1
-				if (loseCounter > 8) {
-					println("You lose, you get nothing! The word was \""+ randomWordSelected +"\".")
-					showMeTheHangman()
-					game = false
-				}
-		}
-	}
-
 	def hiddenToShownWord(char: Char): Unit = {
 		for (i <- hiddenWord.indices) {
 			if (hiddenWord(i) == char.toString) hiddenWordhidden(i) = char.toString
@@ -149,21 +131,43 @@ object Hangerman extends App {
 		}
 	}
 
+	def processTheCharEntered(char: Char): Unit = {
+		char match {
+			case _ if randomWordSelected.contains(char) => println("you live")
+				hiddenToShownWord(char)
+				if (!hiddenWordhidden.contains("_")) {
+					game = false
+					print("You win! The correct word was indeed \"" + randomWordSelected + "\".")
+				}
+			case _ => if (usedWords.contains(char.toString)) println("You already guessed the character " + char)
+			else loseCounter += 1
+
+				if (loseCounter == 8) {
+					println("You lose, you get nothing! The word was \"" + randomWordSelected + "\".")
+					showMeTheHangman()
+					game = false
+				}
+		}
+	}
+
+
 	def theActualGame(): Unit = {
 		while (game) {
 			showMeTheHangman()
 			println(hiddenWordhidden.mkString(" "))
-			print("Game is on!\nWords entered so far are "+usedWords.mkString(", ")+"\nPlease enter a character! :")
+			print("Game is on!\nWords entered so far are " + usedWords.mkString(", ") + "\nPlease enter a character! :")
 			var scanner = scala.io.StdIn.readLine().charAt(0)
-			if (!usedWords.contains(scanner.toString))usedWords += scanner.toString
-			processTheCharEntered(scanner)
+			if (!usedWords.contains(scanner.toString)) {
+				processTheCharEntered(scanner)
+				usedWords += scanner.toString
+			}
 		}
 	}
 
 	theActualIntroGame()
 	theActualGame()
 
-	println("All done, no problems here.")
+	println("Game Over")
 
 	object randomValue {
 		private val random = scala.util.Random
