@@ -1,8 +1,10 @@
 
 import java.sql.{Connection, DriverManager}
 
-import scala.collection.mutable
 import scala.io.Source
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+
 
 
 object Hangerman extends App {
@@ -16,12 +18,11 @@ object Hangerman extends App {
 	private var listOfWords: mutable.MutableList[String] = mutable.MutableList()
 	private var wordAmount: Int = 0
 	private var randomWordSelected: String = ""
-	private var randomWordSelectedChars: Array[String] = Array[String]()
 	private var randomWordSelectedLength: Int = 0
 	private var loseCounter: Int = 0
 	private var game: Boolean = true
-	private var hiddenWord:Array[String] = Array[String]()
-//	private var wordMaps = scala.collection.mutable.Map[Int, Boolean]()
+	private var hiddenWord= ArrayBuffer[String]()
+	private var hiddenWordhidden= ArrayBuffer[String]()
 
 	def applyTheWords(): Unit = {
 		var counter = 0
@@ -36,8 +37,8 @@ object Hangerman extends App {
 		val randomValueSelected = randomValue.randomInt
 		randomWordSelected = listOfWords(randomValueSelected)
 		randomWordSelectedLength = randomWordSelected.length
-		randomWordSelectedChars = randomWordSelected.split("")
-		for(i<- 0 until(hiddenWord.length)){hiddenWord(i)= "_"}
+		randomWordSelected.foreach(char => hiddenWord += char.toString)
+		hiddenWord.foreach(char => hiddenWordhidden += "_")
 		println(wordAmount + " here be the selected word \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
 
 	}
@@ -83,8 +84,8 @@ object Hangerman extends App {
 		resultsSets.next()
 		randomWordSelected = resultsSets.getString("word")
 		randomWordSelectedLength = randomWordSelected.length
-		randomWordSelectedChars = randomWordSelected.split("")
-		for(i<- 0 until(hiddenWord.length)){hiddenWord(i)= "_"}
+		randomWordSelected.foreach(char => hiddenWord += char.toString)
+		hiddenWord.foreach(char => hiddenWordhidden += "_")
 		println("There are " + wordAmount + " words in the list, the selected word is \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
 
 		connection.close()
@@ -94,7 +95,7 @@ object Hangerman extends App {
 		char match {
 			case _ if randomWordSelected.contains(char) => println("you live")
 				hiddenToShownWord(char)
-				if (randomWordSelectedChars.count(_ == "_") == randomWordSelectedLength) {game =true
+				if (!hiddenWordhidden.contains("_")) {game =false
 				print("You win!")}
 			case _ => loseCounter += 1
 				if (loseCounter > 10) {
@@ -105,13 +106,7 @@ object Hangerman extends App {
 		}
 	}
 	def hiddenToShownWord(char:Char):Unit ={
-
-		randomWordSelectedChars(randomWordSelectedChars.indexWhere(chara => chara == char.toString)) = char.toString
-		randomWordSelectedChars(randomWordSelected.indexWhere(chara=> chara == char)) = "_"
-		randomWordSelected.replace(char:Char , '_':Char)
-		if (randomWordSelectedChars.contains(char)){ hiddenToShownWord(char)}
-		else
-			println(hiddenWord)
+		for(i<-0 until(hiddenWord.length)){ if(hiddenWord(i)== char.toString) hiddenWordhidden(i)=char.toString}
 	}
 
 	def theActualIntroGame(): Unit = { // Not need for testing
@@ -140,7 +135,7 @@ object Hangerman extends App {
 
 	def theActualGame(): Unit = {
 		while (game) {
-			println(hiddenWord)
+			println(hiddenWordhidden.mkString(" "))
 			print("Game is on! Please enter a character! :")
 			var scanner = scala.io.StdIn.readLine()
 			processTheCharEntered(scanner.charAt(0))
