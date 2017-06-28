@@ -18,6 +18,7 @@ object Hangerman extends App {
 	private var wordAmount: Int = 0
 	private var randomWordSelected: String = ""
 	private var randomWordSelectedLength: Int = 0
+	var randomValueSelected: Int = 0
 	private var loseCounter: Int = 0
 	private var game: Boolean = true
 	private var hiddenWord = ArrayBuffer[String]()
@@ -49,11 +50,12 @@ object Hangerman extends App {
 			case 1 => println("\n\n\n\n\n\n\n       ___|___")
 			case 2 => println("\n\n\n\n\n          |\n          |\n       ___|___")
 			case 3 => println("\n\n\n\n          |\n          |\n          |\n       ___|___")
-			case 4 => println("           _______\n          |/\n          |\n          |\n          |\n          |       \n          | \n       ___|___")
+			case 4 => println("           ___\n          |/\n          |\n          |\n          |\n          |       \n          | \n       ___|___")
 			case 5 => println("           _______\n          |/\n          |\n          |\n          |\n          |\n          |\n       ___|___ ")
-			case 6 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      \n          |\n       ___|___")
-			case 7 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
+			case 6 => println("           _______\n          |/      |\n          |      \n          |      \n          |       \n          |      \n          |\n       ___|___")
+			case 7 => println("           _______\n          |/      |\n          |      ( )\n          |      \n          |       \n          | \n          |\n       ___|___    _")
 			case 8 => println("           _______\n          |/      |\n          |      ( )\n          |      /|\\\n          |       |\n          |      / \\\n          |\n       ___|___  _____")
+			case 10 => println("\\ /\n |\n/o\\\nYou have escaped the noose and freed yourself.")
 			case _ => println("Better luck next time.")
 		}
 	}
@@ -89,11 +91,39 @@ object Hangerman extends App {
 		resultsSets.next()
 		wordAmount = resultsSets.getInt("totalrows")
 
-		val randomValueSelected = randomValue.randomInt
+		randomValueSelected = randomValue.randomInt
 		resultsSets = statement.executeQuery("SELECT word FROM hangman_data WHERE id=" + randomValueSelected)
 		resultsSets.next()
 		randomWordSelected = resultsSets.getString("word")
 		randomWordSelectedLength = randomWordSelected.length
+		randomWordSelected.foreach(char => hiddenWord += char.toString)
+		hiddenWord.foreach(char => hiddenWordhidden += "_")
+		println("There are " + wordAmount + " words in the list, the selected word is \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
+
+		connection.close()
+	}
+
+	def applyDifficultySQL(difficulty: Int): Unit = {
+		Class.forName(driver)
+		connection = DriverManager.getConnection(url, username, password)
+		val statement = connection.createStatement()
+		var resultsSets = statement.executeQuery("SELECT COUNT(*)AS totalrows FROM hangman_words")
+		var correctDifficulty: Boolean = false
+		resultsSets.next()
+		wordAmount = resultsSets.getInt("totalrows")
+		do {
+			randomValueSelected = randomValue.randomInt
+			resultsSets = statement.executeQuery("SELECT word FROM hangman_words WHERE id=" + randomValueSelected)
+			resultsSets.next()
+			randomWordSelected = resultsSets.getString("word")
+			randomWordSelectedLength = randomWordSelected.length
+			difficulty match {
+				case 1 if randomWordSelectedLength < 4 => correctDifficulty = true
+				case 2 if randomWordSelectedLength < 5 => correctDifficulty = true
+				case 3 if randomWordSelectedLength < 6 => correctDifficulty = true
+				case _ if randomWordSelectedLength >= 6 => correctDifficulty = true
+			}
+		} while (!correctDifficulty)
 		randomWordSelected.foreach(char => hiddenWord += char.toString)
 		hiddenWord.foreach(char => hiddenWordhidden += "_")
 		println("There are " + wordAmount + " words in the list, the selected word is \"" + randomWordSelected + "\" it's index is " + randomValueSelected)
@@ -107,8 +137,27 @@ object Hangerman extends App {
 		}
 	}
 
+	def difficultySelection(): Int = {
+		println("Please select a difficulty you wish to play hangman with.\nPress 1: Casual mode\nPress 2: Easy mode\nPress 3: Normal mode\nPress 4: Hard mode")
+		try {
+			var selectedDifficulty = scala.io.StdIn.readLine().toInt
+			selectedDifficulty match {
+				case 1 => 1
+				case 2 => 2
+				case 3 => 3
+				case _ if selectedDifficulty < 1 => 1
+				case _ if selectedDifficulty > 3 => 4
+				case _ => 4
+			}
+		} catch {
+			case _: java.lang.NumberFormatException => println("Error input, try again.")
+				difficultySelection()
+		}
+	}
+
 	def theActualIntroGame(): Unit = { // Not need for testing
-		print("The game is being prepared! Please enter go to run with text or type sql for running with sql database:")
+		var difficulty = difficultySelection()
+		print("The game is being prepared! Please enter any key or type \"go\" to run with a text file or type \"sql\" for loading with sql database:")
 		loseCounter = 0
 		game = true
 		var scanner = scala.io.StdIn.readLine()
@@ -118,7 +167,7 @@ object Hangerman extends App {
 				wordSelection()
 
 			case "sql" => println("SQL Time!")
-				println("Is the data for the words existing? y\\n?")
+				println("Reload the data in the database? y\\n?")
 				scanner = scala.io.StdIn.readLine()
 				if (scanner == "y") applyWordFromSQL()
 				else {
@@ -127,7 +176,8 @@ object Hangerman extends App {
 					applyWordFromSQL()
 				}
 
-			case _ => sys.exit()
+			case _ if difficulty == 1 => applyWordFromSQL()
+			case _ => applyDifficultySQL(difficulty)
 		}
 	}
 
@@ -137,6 +187,8 @@ object Hangerman extends App {
 				hiddenToShownWord(char)
 				if (!hiddenWordhidden.contains("_")) {
 					game = false
+					loseCounter = 10
+					showMeTheHangman()
 					print("You win! The correct word was indeed \"" + randomWordSelected + "\".")
 				}
 			case _ => if (usedWords.contains(char.toString)) println("You already guessed the character " + char)
